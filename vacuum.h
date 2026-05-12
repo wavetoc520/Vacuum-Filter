@@ -239,7 +239,7 @@ template <typename T>
 unsigned int VacuumFilter<T>::pos_hash(__uint64_t x){
     // https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
     // ovo mapira iz (__uint32_t)MurmurHash64 [0, 2^32-1] (32 bitni hash) u [0, n-1]
-    return ((__uint32_t)MurmurHash64(x ^ 0x66A234CUL) * this->n) >> 32; // == (hash / 2^32) * n
+    return ((__uint32_t)MurmurHash64(x ^ 0x66A234CUL) * (__uint64_t)this->n) >> 32; // == (hash / 2^32) * n
 }
 
 template <typename T>
