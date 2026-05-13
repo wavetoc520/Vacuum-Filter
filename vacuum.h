@@ -139,6 +139,10 @@ bool VacuumFilter<T>::insert(__uint64_t x)
 
     unsigned int b = (rand() & 1) == 0 ? b1 : b2;
 
+    // ako dođe do MaxEvicts trebamo revertat sve promjene
+    // stog parova {pozicija, fingerprint}
+    std::vector<std::pair<unsigned int, T>> promjene;
+
     for (int i = 0; i < this->MaxEvicts; i++){
         // prolazi dok ne prijede MaxEvicts
         T temp_f;
@@ -159,9 +163,15 @@ bool VacuumFilter<T>::insert(__uint64_t x)
 
         unsigned int s = b*this->m + (rand() % this->m);
         temp_f = table[s];
+        promjene.push_back({s, table[s]});
         table[s] = f;
         f = temp_f;
         b = alt(b, f);
+    }
+
+    // revertanje svih promjena jer je loop failao
+    for (auto rit = promjene.rbegin(); rit != promjene.rend(); rit++){
+        table[rit->first] = rit->second;
     }
 
     return false;

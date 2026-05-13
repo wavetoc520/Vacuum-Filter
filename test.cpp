@@ -44,18 +44,16 @@ void test_vf_no_padding() {
     VacuumFilter<uint16_t> vf(n, 4, 400);
 
     for (int i = 0; i < n; i++){
-        if (i == 30262944){
-            std::cout << "Bruh" << std::endl;
-        }
         if (vf.insert(insKey[i]) == false)
             std::cout << "Insertion fails when inserting " << i << "th key: " << insKey[i] << std::endl;
     }
 
     // std::cout << "Load factor = " << vf.get_load_factor() << std::endl;
 
-    for (int i = 0; i < n; i++)
+    for (int i = 0; i < n; i++){
         if (vf.lookup(insKey[i]) == false)
             std::cout << "False negative happens at " << i << "th key: " << insKey[i] << std::endl;
+    }
     
     int false_positive_cnt = 0;
 
