@@ -1,5 +1,3 @@
-// VacuumFilter<uint16_t> vf;
-
 #include <stdio.h>
 #include <vector>
 #include <random>
@@ -7,17 +5,6 @@
 #include "hash.h"
 
 #define LOAD_FACTOR 0.95
-
-// vjerojatno ce bit pametno imat klasu koja ce se bavit sa semi sortiranjem - ovdje implementirat funkcije za dohvaćanje, izmjenu itd... (set_bucket, insert_to_bucket, lookup_in_bucket, ...)
-// class Bucket
-// {
-// private:
-    
-// public:
-//     Bucket(/* args */);
-//     ~Bucket();
-// };
-
 
 bool LoadFactorTest(int items, float a, float r, int L, int slots){
     // ovo je aproksimacija na temelju neke matematike...idk
@@ -27,7 +14,7 @@ bool LoadFactorTest(int items, float a, float r, int L, int slots){
     // L        - alternate range - broj uzastopnih bucketa
     // slots    - broj slotova po bucketu
 
-    // broj bucketa ( mora biti višekratnik od L)
+    // broj bucketa (mora biti višekratnik od L)
     int m = ceil(items / a / slots / L) * L;
     // ciljni broj itema
     int N = slots * m * r * a;
@@ -48,7 +35,7 @@ int RangeSelection(int items, float a, float r, int slots){
 }
 
 
-// T je tip fingerprinta, kao recimo __uint16_t
+// T je tip fingerprinta, kao recimo uint16_t
 template<typename T>
 class VacuumFilter
 {
@@ -59,6 +46,7 @@ private:
     int MaxEvicts;
     std::vector<T> table; // cijelo polje (inicijalno na 0)
     std::vector<int> L; // alternate range duljine
+    int filled_cells;
 
 public:
     VacuumFilter(int max_item, int m, int MaxEvicts) : max_item(max_item), m(m), MaxEvicts(MaxEvicts) {
@@ -81,22 +69,23 @@ public:
         //      -> ((a + b - 1) / b) * b
         this->n = (((int)(max_item / LOAD_FACTOR / this->m) + this->L[0] - 1) / this->L[0]) * this->L[0];
         this->table.resize(this->n * this->m);
-        /* trebat ce dodat ono semi-sorting buckets*/
+        this->filled_cells = 0;
     };
     ~VacuumFilter() {};
 
-    bool insert(__uint64_t x);
-    bool del(__uint64_t x);
-    bool lookup(__uint64_t x);
+    bool insert(uint64_t x);
+    bool del(uint64_t x);
+    bool lookup(uint64_t x);
 
-    T fingerprint(__uint64_t x);
-    unsigned int pos_hash(__uint64_t x);
+    T fingerprint(uint64_t x);
+    unsigned int pos_hash(uint64_t x);
     unsigned int alt(unsigned int b, T f);
+    double get_load_factor();
+    double get_bits_per_item();
 };
 
-
 template<typename T>
-bool VacuumFilter<T>::insert(__uint64_t x)
+bool VacuumFilter<T>::insert(uint64_t x)
 {
     /*
     f = fingerprint(x)
@@ -129,10 +118,12 @@ bool VacuumFilter<T>::insert(__uint64_t x)
     for (int i = 0; i < this->m; i++){
         if (table[b1*this->m + i] == 0){
             table[b1*this->m + i] = f;
+            this->filled_cells++;
             return true;
         }
         if (table[b2*this->m + i] == 0){
             table[b2*this->m + i] = f;
+            this->filled_cells++;
             return true;
         }
     }
@@ -156,6 +147,7 @@ bool VacuumFilter<T>::insert(__uint64_t x)
                     // nasao empty slot pa stavlja f' u njega, a f umjesto njega
                     table[temp_b*this->m + k] = temp_f;
                     table[b*this->m + j] = f;
+                    this->filled_cells++;
                     return true;
                 }
             }
@@ -179,7 +171,7 @@ bool VacuumFilter<T>::insert(__uint64_t x)
 }
 
 template <typename T>
-bool VacuumFilter<T>::del(__uint64_t x)
+bool VacuumFilter<T>::del(uint64_t x)
 {
     /*
     f = fingerprint(x)
@@ -199,10 +191,12 @@ bool VacuumFilter<T>::del(__uint64_t x)
     for (int i = 0; i < this->m; i++){
         if (table[b1*this->m + i] == f){
             table[b1*this->m + i] = 0;
+            this->filled_cells--;
             return true;
         }
         if (table[b2*this->m + i] == f){
             table[b2*this->m + i] = 0;
+            this->filled_cells--;
             return true;
         }
     }
@@ -210,7 +204,7 @@ bool VacuumFilter<T>::del(__uint64_t x)
 }
 
 template <typename T>
-bool VacuumFilter<T>::lookup(__uint64_t x)
+bool VacuumFilter<T>::lookup(uint64_t x)
 {
     /*
     f = fingerprint(x)
@@ -240,16 +234,16 @@ bool VacuumFilter<T>::lookup(__uint64_t x)
 
 
 template <typename T>
-T VacuumFilter<T>::fingerprint(__uint64_t x){
+T VacuumFilter<T>::fingerprint(uint64_t x){
     // mapira iz [0, 2^64-1] na [0, 2^T_len-2] na [1, 2^T_len-1] (0 ostavljamo za "prazan slot")
     return (MurmurHash64(x ^ 0x99D4A66AF0A2321ULL) % ((1ULL << (sizeof(T) * 8)) - 1)) + 1; // == hash % (2^T_len - 1) + 1;
 }
 
 template <typename T>
-unsigned int VacuumFilter<T>::pos_hash(__uint64_t x){
+unsigned int VacuumFilter<T>::pos_hash(uint64_t x){
     // https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
-    // ovo mapira iz (__uint32_t)MurmurHash64 [0, 2^32-1] (32 bitni hash) u [0, n-1]
-    return ((__uint32_t)MurmurHash64(x ^ 0x66A234CUL) * (__uint64_t)this->n) >> 32; // == (hash / 2^32) * n
+    // ovo mapira iz (uint32_t)MurmurHash64 [0, 2^32-1] (32 bitni hash) u [0, n-1]
+    return ((uint32_t)MurmurHash64(x ^ 0x66A234CUL) * (uint64_t)this->n) >> 32; // == (hash / 2^32) * n
 }
 
 template <typename T>
@@ -271,4 +265,17 @@ unsigned int VacuumFilter<T>::alt(unsigned int b, T f)
     // alt = (this->n - 1 - alt + delta) % this->n;
 
     return alt;
+}
+
+template <typename T>
+double VacuumFilter<T>::get_load_factor(){
+    // omjer zauzetih slotova/cellova i ukupno dostupnih
+    return this->filled_cells * 1.0 / (this->m * this->n);
+}
+
+template <typename T>
+double VacuumFilter<T>::get_bits_per_item(){
+    // omjer ukupne memorije koju podaci zauzimaju (+ overhead vectora) i toga koliko ima podataka ->
+    // prosječni broj bitova po fingerprintu/itemu (bit će velik ako se tek počinje punit
+    return (this->table.capacity() * sizeof(T) + sizeof(this->table)) * 8.0 / this->filled_cells;
 }

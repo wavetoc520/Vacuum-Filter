@@ -27,7 +27,7 @@ void test_vf_no_padding() {
         This version aims at flexibility, so it is slower than VF_with_padding.
     */
 
-    std::cout << "Testing vacuum filter(no padding)..." << std::endl;
+    std::cout << "Testing vacuum filter..." << std::endl;
 
     int n = 1 << 25; // number of inserted keys
     int q = 10000000; // number of queries
@@ -48,7 +48,7 @@ void test_vf_no_padding() {
             std::cout << "Insertion fails when inserting " << i << "th key: " << insKey[i] << std::endl;
     }
 
-    // std::cout << "Load factor = " << vf.get_load_factor() << std::endl;
+    std::cout << "Load factor = " << vf.get_load_factor() << std::endl;
 
     for (int i = 0; i < n; i++){
         if (vf.lookup(insKey[i]) == false)
@@ -62,7 +62,7 @@ void test_vf_no_padding() {
             false_positive_cnt++;
 
     std::cout << "False positive rate = " << double(false_positive_cnt) / q << std::endl;
-    // std::cout << "Bits per key = " << vf.get_bits_per_item() << std::endl;
+    std::cout << "Bits per key = " << vf.get_bits_per_item() << std::endl;
 
     for (int i = 0; i < n; i++)
         if (vf.del(insKey[i]) == false)
