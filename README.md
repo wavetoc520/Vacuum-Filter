@@ -17,7 +17,7 @@ gunzip GCF_000005845.2_ASM584v2_genomic.fna.gz
 
 ## Usage 
 ```
-./test GCF_000005845.2_ASM584v2_genomic.fna
+./main GCF_000005845.2_ASM584v2_genomic.fna
 ```
 
 ## Input and output formats
