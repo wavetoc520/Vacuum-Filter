@@ -18,9 +18,6 @@
 using namespace std;
 
 void run_testing(const string& data_type, int k, const vector<uint64_t> kmers, ofstream& csv){
-    // ===NEED TO ADD LOAD FACTOR AND BITS PER ITEM=== 
-
-
     vector<uint64_t> aliens = generate_random_kmer(kmers, 1000000);
     
     // Creatin the vacuum filter with the size of extracted k-mer,
@@ -62,8 +59,8 @@ void run_testing(const string& data_type, int k, const vector<uint64_t> kmers, o
     double insert_throughput = kmers.size() /insert_time / 1e6; // Million operations per second
     double lookup_throughput = aliens.size() /lookup_time / 1e6; // Million operations per second
     double false_positive_rate = double(false_positive_cnt) / aliens.size();
-    //double load_factor = vf.get_load)factor();
-    //double bits_per_item = vf.get_bits_per_item();
+    double load_factor = vf.get_load_factor();
+    double bits_per_item = vf.get_bits_per_item();
 
     cout << "Data: " << data_type << ", k: " << k << endl;
     cout << "Inserted: " << kmers.size() << " k-mers, failed: " << failed_insert_cnt << endl;
@@ -71,12 +68,11 @@ void run_testing(const string& data_type, int k, const vector<uint64_t> kmers, o
     cout << "Insert throughput: " << insert_throughput << " MOPS" << endl;
     cout << "Lookup throughput: " << lookup_throughput << " MOPS" << endl;
     cout << "Delete throughput: " << kmers.size() / delete_time / 1e6 << " MOPS" << endl;
-    //cout << "Load factor: " << load_factor << endl;
-    //cout << "Bits per item: " << bits_per_item << endl;
+    cout << "Load factor: " << load_factor << endl;
+    cout << "Bits per item: " << bits_per_item << endl;
     cout << endl;
     
-    // NEED TO UPDATE WITH BITS PER ITEM AND LOAD FACTOR
-    csv << data_type << ", " << k << ", " << false_positive_rate << ", " << insert_throughput << ", " << lookup_throughput << "\n";
+    csv << data_type << ", " << k << ", " << false_positive_rate << ", " << insert_throughput << ", " << lookup_throughput << ", " << load_factor << ", " << bits_per_item << "\n";
 }
 
 int main(int argc, char* argv[]){
@@ -90,8 +86,7 @@ int main(int argc, char* argv[]){
 
     // Opening csv file for results
     ofstream csv("results/results.csv");
-    // NEED TO UPDATE WITH BITS PER ITEM AND LOAD FACTOR
-    csv << "data_type,k,false_positive_rate,insert_throughput_mops,lookup_throughput_mops\n";
+    csv << "data_type,k,false_positive_rate,insert_throughput_mops,lookup_throughput_mops,load_factor,bits_per_item\n";
 
     // E. coli genome experiment
     cout << "===E.coli genome testing====" << endl;
