@@ -51,7 +51,7 @@ vector<uint64_t> extract_kmer(const string& file_path, int k){
     file.close();
 
     vector<uint64_t> kmers;
-    for(int i = 0; i <= (int)seq.size(); i++){
+    for(int i = 0; i <= (int)seq.size() - k; i++){
         uint64_t kmer_hash = hash_kmer(seq, i, k);
         if(kmer_hash != 0){
             kmers.push_back(kmer_hash);
