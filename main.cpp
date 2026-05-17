@@ -45,6 +45,9 @@ void run_testing(const string& data_type, int k, const vector<uint64_t> kmers, o
     }
     auto time4 = chrono::high_resolution_clock::now();
 
+    double load_factor = vf.get_load_factor();
+    double bits_per_item = vf.get_bits_per_item();
+
     // Measuring deletion throughput
     auto time5 = chrono::high_resolution_clock::now();
     for(auto kmer : kmers){
@@ -59,8 +62,7 @@ void run_testing(const string& data_type, int k, const vector<uint64_t> kmers, o
     double insert_throughput = kmers.size() /insert_time / 1e6; // Million operations per second
     double lookup_throughput = aliens.size() /lookup_time / 1e6; // Million operations per second
     double false_positive_rate = double(false_positive_cnt) / aliens.size();
-    double load_factor = vf.get_load_factor();
-    double bits_per_item = vf.get_bits_per_item();
+    
 
     cout << "Data: " << data_type << ", k: " << k << endl;
     cout << "Inserted: " << kmers.size() << " k-mers, failed: " << failed_insert_cnt << endl;
