@@ -1,4 +1,6 @@
 .fasta
 .fna
 test
+main
 *.out
+.vscode

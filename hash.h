@@ -1,3 +1,4 @@
+#pragma once
 #include <stdio.h>
 
 // kopirao iz originala - pogledaj od kud je to doslo
