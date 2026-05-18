@@ -1,3 +1,6 @@
+// Matheo Kesar
+// Implementation of the vacuum filter
+
 #include <stdio.h>
 #include <vector>
 #include <random>
@@ -7,22 +10,22 @@
 #define LOAD_FACTOR 0.95
 
 bool LoadFactorTest(int items, float a, float r, int L, int slots){
-    // ovo je aproksimacija na temelju neke matematike...idk
-    // items    - ukupan broj itema
-    // a        - ciljani load factor (valjda negdje 96%)
-    // r        - multiplikator za a - da budemo sigurniji u rješenje (valjda negdje 95%)
-    // L        - alternate range - broj uzastopnih bucketa
-    // slots    - broj slotova po bucketu
+    // aproximation of the load... idk
+    // items    - maximum num of items
+    // a        - target load factor (around 96%)
+    // r        - multiplier for a - for a more certain prediction (around 95%)
+    // L        - alternate range - number of sequential buckets
+    // slots    - number of slots per bucket
 
-    // broj bucketa (mora biti višekratnik od L)
+    // num of buckets (multiple of L)
     int m = ceil(items / a / slots / L) * L;
-    // ciljni broj itema
+    // target number of entries
     int N = slots * m * r * a;
-    // broj chunkova
+    // number of chunks
     int c = m / L;
-    // minimalni kapacitet svakog chunka
+    // min chunk capacity
     float P = 0.97 * slots * L;
-    // procjenitelj maksimalnog loada - "Balls into Bins" problem...
+    // max load estimator - "Balls into Bins" problem...
     float D = (double)N/c + 3.0/2*sqrt(2.0*N/c*log(c));
 
     return (D < P) ? true : false;
@@ -35,7 +38,7 @@ int RangeSelection(int items, float a, float r, int slots){
 }
 
 
-// T je tip fingerprinta, kao recimo uint16_t
+// T fingerprint type, ex. uint16_t
 template<typename T>
 class VacuumFilter
 {
@@ -44,8 +47,8 @@ private:
     int n; // num of buckets
     int m; // slots per bucket
     int MaxEvicts;
-    std::vector<T> table; // cijelo polje (inicijalno na 0)
-    std::vector<int> L; // alternate range duljine
+    std::vector<T> table; // entire table for entries (initially 0)
+    std::vector<int> L; // alternate range lengths
     int filled_cells;
 
 public:
@@ -62,8 +65,8 @@ public:
 
 
 
-        // konačni broj bucketa - želimo da bude višekratnik od najveće
-        // alternate range duljine i veći ili jednak najvećem kapacitetu:
+        // final bucket num - has to be a multiple of the largest
+        // alternate range length and >= of the total capacity:
         //      a - max_item / 0.96 / 4
         //      b - L[0]
         //      -> ((a + b - 1) / b) * b
@@ -106,7 +109,7 @@ bool VacuumFilter<T>::insert(uint64_t x)
 
         s = random slot from b
         switch f i f from s
-        b = alt(b, f) //f je sada taj zamijenjeni fingerprint iz f
+        b = alt(b, f) //new f from above
 
     return false
     */
@@ -130,21 +133,21 @@ bool VacuumFilter<T>::insert(uint64_t x)
 
     unsigned int b = (rand() & 1) == 0 ? b1 : b2;
 
-    // ako dođe do MaxEvicts trebamo revertat sve promjene
-    // stog parova {pozicija, fingerprint}
+    // if MaxEvicts is reached, revert all changes
+    // pair stack {position, fingerprint}
     std::vector<std::pair<unsigned int, T>> promjene;
 
     for (int i = 0; i < this->MaxEvicts; i++){
-        // prolazi dok ne prijede MaxEvicts
+        // until MaxEvicts is reached
         T temp_f;
         for (int j = 0; j < this->m; j++){
-            // prolazi fingerprinte odabranog bucketa
-            temp_f = table[b*this->m + j]; // f' u pseudokodu
+            // goes over fingerprints of the selected bucket
+            temp_f = table[b*this->m + j]; // f' in pseudocode
             unsigned int temp_b = alt(b, temp_f);
             for (int k = 0; k < this->m; k++){
-                // trazi empty slot
+                // searches empty slot
                 if (table[temp_b*this->m + k] == 0){
-                    // nasao empty slot pa stavlja f' u njega, a f umjesto njega
+                    // found empty slot, puts f' inside and old value into f
                     table[temp_b*this->m + k] = temp_f;
                     table[b*this->m + j] = f;
                     this->filled_cells++;
@@ -161,7 +164,7 @@ bool VacuumFilter<T>::insert(uint64_t x)
         b = alt(b, f);
     }
 
-    // revertanje svih promjena jer je loop failao
+    // reverting changes because it failed to insert
     for (auto rit = promjene.rbegin(); rit != promjene.rend(); rit++){
         table[rit->first] = rit->second;
     }
@@ -235,31 +238,31 @@ bool VacuumFilter<T>::lookup(uint64_t x)
 
 template <typename T>
 T VacuumFilter<T>::fingerprint(uint64_t x){
-    // mapira iz [0, 2^64-1] na [0, 2^T_len-2] na [1, 2^T_len-1] (0 ostavljamo za "prazan slot")
+    // map from [0, 2^64-1] to [0, 2^T_len-2] to [1, 2^T_len-1] (0 represents "empty slot")
     return (MurmurHash64(x ^ 0x99D4A66AF0A2321ULL) % ((1ULL << (sizeof(T) * 8)) - 1)) + 1; // == hash % (2^T_len - 1) + 1;
 }
 
 template <typename T>
 unsigned int VacuumFilter<T>::pos_hash(uint64_t x){
     // https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
-    // ovo mapira iz (uint32_t)MurmurHash64 [0, 2^32-1] (32 bitni hash) u [0, n-1]
+    // map from (uint32_t)MurmurHash64 [0, 2^32-1] (32 bit hash) to [0, n-1]
     return ((uint32_t)MurmurHash64(x ^ 0x66A234CUL) * (uint64_t)this->n) >> 32; // == (hash / 2^32) * n
 }
 
 template <typename T>
 unsigned int VacuumFilter<T>::alt(unsigned int b, T f)
 {
-    // na temelju fingerprinta odabire koji range će koristiti
-    // radi novi fingerprint od fingerprinta ?? i stavlja ga u alternate range
-    // xor sa prvim bucketor (invertibilno) -> alt(alt(b,f),f) == b
+    // selects range based on fingerprint, makes fingerprint from fingerprint ???
+    // and puts it somewhere into alternate range
+    // xor with first bucket (reversable) -> alt(alt(b,f),f) == b
 
     T f_hash = fingerprint(f);
-    int l = this->L[f % 4] - 1; // 2^k - 1 - radi bitmasku kao 00011111 = 31
-    int delta = f_hash & l; // uzima samo donje bitove koji predstavljaju položaj unutar chunka
-    int alt = b ^ delta; // uvijek ostaje unutar istog chunka s nekim random pomakom (nikad neće bit veće od n!!)
+    int l = this->L[f % 4] - 1; // 2^k - 1 -> creates a bitmask like 00011111 = 31
+    int delta = f_hash & l; // modifies lower bits that represent the position inside chunk
+    int alt = b ^ delta; // always stays inside same chunk with a random offset (never bigger than n!!)
 
 
-    // algoritam 4, ne koristi uopće L
+    // algoritha 4, doesnt use L
     // int delta = fingerprint(f) % this->n;
     // int alt = (b - delta) % this->n;
     // alt = (this->n - 1 - alt + delta) % this->n;
@@ -269,13 +272,13 @@ unsigned int VacuumFilter<T>::alt(unsigned int b, T f)
 
 template <typename T>
 double VacuumFilter<T>::get_load_factor(){
-    // omjer zauzetih slotova/cellova i ukupno dostupnih
+    // ratio of filled cells/slots and total capacity
     return this->filled_cells * 1.0 / (this->m * this->n);
 }
 
 template <typename T>
 double VacuumFilter<T>::get_bits_per_item(){
-    // omjer ukupne memorije koju podaci zauzimaju (+ overhead vectora) i toga koliko ima podataka ->
-    // prosječni broj bitova po fingerprintu/itemu (bit će velik ako se tek počinje punit
+    // ratio of total memory of dataset (+ vector overhead) and inserted data ->
+    // average bits per fingerprint/item (big at first when not a lot of data is inserted)
     return (this->table.capacity() * sizeof(T) + sizeof(this->table)) * 8.0 / this->filled_cells;
 }

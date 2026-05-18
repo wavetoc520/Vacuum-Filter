@@ -1,8 +1,8 @@
 #pragma once
 #include <stdio.h>
 
-// kopirao iz originala - pogledaj od kud je to doslo
-__uint64_t MurmurHash64(__uint64_t h)
+// copied from original
+uint64_t MurmurHash64(uint64_t h)
 {
     h ^= h >> 33;
     h *= 0xff51afd7ed558ccd;

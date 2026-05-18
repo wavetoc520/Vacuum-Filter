@@ -1,5 +1,5 @@
 .fasta
-.fna
+*.fna
 test
 main
 *.out
