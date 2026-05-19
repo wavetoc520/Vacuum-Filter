@@ -15,9 +15,21 @@ wget "https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_A
 gunzip GCF_000005845.2_ASM584v2_genomic.fna.gz 
 ```
 
+Install requirements:
+```
+pip install -r requirements.txt --break-system-packages
+```
+
 ## Usage 
 ```
 ./main GCF_000005845.2_ASM584v2_genomic.fna
+```
+For testing:
+```
+cd tests
+make
+./test
+python3 visualize.py
 ```
 
 ## Input and output formats
@@ -27,11 +39,6 @@ Input
 
 Output
 - CSV file with calculated metrics
-
-## Example output
-```
-Need to add...
-```
 
 
 ## Authors
