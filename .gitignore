@@ -4,3 +4,4 @@ test
 main
 *.out
 .vscode
+env

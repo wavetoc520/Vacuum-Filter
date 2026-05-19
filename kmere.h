@@ -65,6 +65,7 @@ vector<uint64_t> extract_kmer(const string& file_path, int k){
 // so that we can test the false positive rate of the vacuum filter
 vector<uint64_t> generate_random_kmer(const vector<uint64_t>& existing_kmer, int num){
     unordered_set<uint64_t> existing_set(existing_kmer.begin(), existing_kmer.end()); // All values in our existing k-mers
+    cout << "Repeated kmer hashes: " << existing_kmer.size() - existing_set.size() << endl;
     vector<uint64_t> random_kmers;
     int seed = random_device{}();
     mt19937_64 rnd(seed); // Pseudo-random generator of 64-bit numbers

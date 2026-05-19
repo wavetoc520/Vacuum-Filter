@@ -47,7 +47,7 @@ private:
     int n; // num of buckets
     int m; // slots per bucket
     int MaxEvicts;
-    std::vector<T> table; // entire table for entries (initially 0)
+    std::vector<T> table; // entire table for entries (initially all at 0)
     std::vector<int> L; // alternate range lengths
     int filled_cells;
 
