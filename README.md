@@ -5,8 +5,8 @@ This is a university project for the 2026 course Bioinformatics 1 at FER. In thi
 ## Installation
 Clone the repository:
 ```
-git clone https://github.com/yourusername/vacuum-filter.git
-cd vacuum-filter
+git clone https://github.com/wavetoc520/Vacuum-Filter.git
+cd Vacuum-Filter
 make
 ```
 Download E. coli genome:
@@ -17,7 +17,7 @@ gunzip GCF_000005845.2_ASM584v2_genomic.fna.gz
 
 Install requirements:
 ```
-pip install -r requirements.txt --break-system-packages
+pip install -r requirements.txt
 ```
 
 ## Usage 

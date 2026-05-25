@@ -10,7 +10,7 @@
 #define LOAD_FACTOR 0.95
 
 bool LoadFactorTest(int items, float a, float r, int L, int slots){
-    // aproximation of the load... idk
+    // aproximation of the load
     // items    - maximum num of items
     // a        - target load factor (around 96%)
     // r        - multiplier for a - for a more certain prediction (around 95%)
